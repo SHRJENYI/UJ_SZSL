@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07080a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="狹間收容記錄">
+<title>狹間收容記錄　9.??????</title>
+<style>
+  :root{
+    --bg:#07080a; --fg:#c9cdd4; --dim:#8b929c; --gold:#e8a33d; --red:#c0392b;
+    --cy:#4aa3c7; --line:#1a1d22; --paper:#0d0f13;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,sans-serif;
+    font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased;}
+  #wrap{max-width:820px;margin:0 auto;padding:24px 20px 80px;}
+
+  /* ── 儀表 ── */
+  #hud{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,var(--bg) 72%,transparent);
+    padding:14px 0 12px;border-bottom:1px solid var(--line);margin-bottom:22px;}
+  #vr{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:30px;letter-spacing:.16em;
+    color:var(--gold);font-weight:700;}
+  #vr .q{color:#565c66;}
+  #vr .new{animation:pop .5s ease;}
+  @keyframes pop{0%{color:#fff;text-shadow:0 0 18px var(--gold);}100%{color:var(--gold);}}
+  #meters{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--dim);margin-top:6px;}
+  #meters b{color:var(--fg);font-weight:600;}
+  .bar{display:inline-block;width:64px;height:5px;background:#16191d;border-radius:3px;
+    overflow:hidden;vertical-align:middle;margin-left:5px;}
+  .bar i{display:block;height:100%;background:var(--cy);}
+  .bar.warn i{background:var(--red);}
+
+  /* ── 正文 ── */
+  #log p{margin:0 0 .85em;}
+  .nar{color:var(--fg);}
+  .dim{color:var(--dim);}
+  .gold{color:var(--gold);font-weight:600;}
+  .red{color:var(--red);font-weight:700;}
+  .cy{color:var(--cy);}
+  .sys{color:#a3aab4;font-size:13.5px;border-left:2px solid var(--line);padding-left:12px;}
+  .head{color:var(--gold);font-size:13px;letter-spacing:.28em;margin:26px 0 10px;
+    border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .void{color:#6b7280;font-style:italic;}
+
+  /* ── 選項 ── */
+  #choices{margin-top:22px;display:flex;flex-direction:column;gap:9px;}
+  button.ch{all:unset;cursor:pointer;display:block;padding:13px 16px;background:var(--paper);
+    border:1px solid var(--line);border-radius:5px;color:var(--fg);transition:.14s;line-height:1.65;}
+  button.ch{touch-action:manipulation;-webkit-tap-highlight-color:rgba(232,163,61,.18);}
+  button.ch:hover{border-color:var(--gold);background:#12141a;transform:translateX(3px);}
+  @media (max-width:430px){
+    #wrap{padding:16px 12px 72px;}
+    #vr{font-size:23px;letter-spacing:.12em;}
+    button.ch{padding:14px 13px;}
+    #meters{gap:12px;font-size:12px;}
+  }
+  button.ch .tag{color:var(--dim);font-size:11.5px;display:block;margin-top:5px;letter-spacing:.05em;}
+  button.ch.danger:hover{border-color:var(--red);}
+  button.ch.exit:hover{border-color:var(--cy);}
+
+  /* ── 條目卡 ── */
+  .entry{border:1px solid var(--gold);border-radius:6px;padding:18px 20px;margin:22px 0;
+    background:#0e0c08;}
+  .entry h3{margin:0 0 4px;color:var(--gold);font-size:17px;letter-spacing:.06em;}
+  .entry .no{color:var(--dim);font-family:ui-monospace,monospace;font-size:12.5px;letter-spacing:.1em;}
+  .entry dl{margin:12px 0 0;font-size:14.5px;}
+  .entry dt{color:var(--dim);font-size:12px;letter-spacing:.14em;margin-top:9px;}
+  .entry dd{margin:1px 0 0;}
+
+  #foot{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:12px;color:var(--dim);display:flex;gap:16px;flex-wrap:wrap;}
+  #foot a{color:var(--dim);cursor:pointer;text-decoration:none;border-bottom:1px dotted #333;}
+  #foot a:hover{color:var(--gold);border-color:var(--gold);}
+  .fade{animation:fi .34s ease;}
+  @keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <div id="vr"></div>
+    <div id="meters"></div>
+  </div>
+  <div id="log"></div>
+  <div id="choices"></div>
+  <div id="foot">
+    <a id="lnkArc">收容檔案</a>
+    <a id="lnkKey">關鍵詞</a>
+    <a id="lnkNew">重新開始</a>
+    <span class="dim" id="runinfo"></span>
+  </div>
+</div>
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════
+   狹間收容記錄　9.??????
+   世界觀：Rc國境／源界28世（作者：梵真）
+   ★ 狹間 ＝ 整數位 9 ＝ 未成立、可能性
+   ★ 觀測即固定：看清楚了，它才存在——連追你的東西一起
+   ★ 意聚：意念會凝成東西。你不能停止思考
+   ═══════════════════════════════════════════════════════════ */
+
+const $ = s => document.querySelector(s);
+const LOG = $('#log'), CH = $('#choices');
+
+/* ── 全域（跨輪保留，只在記憶體裡）───────────────────── */
+const ARCHIVE = [];              // 歷次被收容留下的條目
+const SEEN_KW = new Set();       // 解鎖過的關鍵詞
+let RUN = 0;
+let PLAYER_NAME = null;   // 玩家在空白頁上填的名字
+
+/* ── 道具表　★ 由 src/rooms.py 產生 ─────────────── */
+const ITEMS = {
+  "布丁":{ desc:"對跟著你的東西使用：牠會停下來吃，吃完就站到你這邊。沒有東西跟著的話，你自己吃（武裝 +10）。", use:"你把布丁放在地上，退了三步。" },
+  "零件":{ desc:"拼回一台無人機（上限 6）。在這裡，這是唯一補得回來的東西。", use:"你蹲下來拼。手指記得順序，比你的腦子記得清楚。" },
+  "找零的運氣":{ desc:"下一次觀測不加壓力。運氣就是：那一眼看得剛剛好。", use:"你把那罐運氣打開喝了。味道像汽水，可是氣泡往下沉。" },
+  "普通的一天":{ desc:"擴散歸零。一整天結結實實的日常，把鬆掉的地方全部壓回去。順便：「買到的那一天」不再跟著你。", use:"你拉開罐子。裡面冒出來的不是氣，是早晨的聲音。" },
+  "錯誤的名字":{ desc:"對跟著你的東西喊錯名字：牠會氣到現形——壓力 +2，但讀數立刻固定一位。", use:"你深呼吸，用最誠懇的語氣，喊錯了。" },
+};
+
+/* ── 關鍵詞百科　★ 由 src/rooms.py 產生 ─────────────── */
+const KW = {
+  "狹間":"源界28世裡整數位 9 的那一區。未確認源界，最混亂的地方。一律當成「未成立、可能性」——那不是一個世界，那是還沒變成世界的東西。",
+  "觀測即固定":"當一個觀測者觀測了某件事的可能，那件事的變動率就會正式出現。在狹間裡這條規則沒有緩衝：你看清楚什麼，什麼就成立。",
+  "意聚者":"在源能濃到連呼吸都吸得到的地方長大的人。身體恢復能力比常人強，就算力量類型是觀測類也一樣。但這一切建立在源能充沛上面。",
+  "意聚生物":"由意念聚成的東西。之所以會有，是因為那些地方的源能濃到連呼吸都吸得到——意念在裡面會凝起來。",
+  "界限吸引":"把東西朝自己拉過來的意聚能力。穩定，有邊界，收得回來。",
+  "無界牽引":"界限吸引變質之後的樣子。「界限曲解的高位能力」。它沒有邊界，所以它不知道什麼時候該停。只會吸，不會射。",
+  "變動率":"這個世界現在站在哪一條線上。格式固定：個位數．小數六位，共八個字。整數位是你在第幾層。",
+  "源能":"取代了Rc國境所有能源的東西。本來只存在於靈脈裡，稀薄的。是人工靈脈裝置硬把它挖出來，才變成高濃度擴散。",
+  "靈脈":"地底下的天然源能管道。★ 這跟後來興建的人工源能管道是兩件事。",
+  "特勤武裝":"由奈米無人機組成。常備型態五種——刀、槍、懸浮盾、駭入、手電筒。靠源能當主能量，所以在沒有源能的地方會沒電。",
+  "無人機庫存":"武裝的第二個限制。打壞了就少一台，不夠就拼不出形狀——刀可能只剩半截。",
+  "收容":"特勤的標準流程。把不該成立的東西固定下來、編號、封存。★ 被收容的東西不會消失，它會變成一個條目。",
+  "殘響":"觀測頻率和訊號的能力。讀數會浮現在腦子裡，是因為他就在讀數裡面。",
+  "收束":"狹間停止擴散、開始成立的過程。八位數字全部填滿，這個地方就變成一個真的世界——而你會是它的一部分。",
+  "空白年間":"一段可以被隨意刪除、更改的時間軸。深駭之所以有效，是因為有這段東西可以動。",
+  "載具":"讀數不會自己跑。要有人動了載具它才會跳——懷錶，或者別的變動率裡有人動了他們那一副。",
+  "存在係數":"一個東西「有多算數」的度量。在狹間裡它是浮動的，因為這裡的東西還沒決定要不要算數。",
+  "三次定律":"一件事要成立三次才算數。第一次是巧合，第二次是可能，第三次才是事實。",
+  "深駭":"深入世界的根源，直接駭進去。把界域當成一台電腦，資料夾分成過去、現在、未來。要刪的刪，沒有東西的地方貼上去。",
+  "源軀":"塑出來的身體。不是本體，所以力量是複製版——絕對不會有原版那麼強。",
+  "生長劑":"打一針直接長大。一根很貴，而且打完容易有心智年齡和身體年齡對不上的問題。",
+  "可能渠":"模擬現實世界的變動率。先在這裡找到可能性和觀測結果，再拿去實踐。樣本不夠真實的話，落差就會很大。",
+  "千隱世":"負責修正時間的人。世人對他的認識，全部來自那本《給穿越世界的你》——知道有這麼一個人在修正時間。其他的，書上沒有寫。",
+  "虛幻殺手":"金色的左輪。修正時間的那個人的槍。用的是虛毀彈——會用完，所以他不浪費。",
+  "亙古之災":"修正時間的那個人，最後拿命去抹掉的東西。那是很久以後的事，這裡還沒發生。",
+  "布丁":"甜的。焦糖的部分最好。★ 在一個什麼都還沒成立的地方，一個好吃的布丁是很強的存在證明。",
+  "遊戲機":"三台疊在一起，有一台被拆過又裝回去。少掉的零件去做了別的東西——正式紀錄上，它是自然損壞。",
+};
+
+/* ── 狹間的房間（未成立 → 觀測後成立）★ 由 src/rooms.py 產生 ─── */
+const ROOMS = [
+  { id:"corridor", void:"一條沒有長度的東西。你往前走，走了多久都還在同一段。牆是有的，可是牆沒有顏色。",
+    obs:[
+      { t:"看牆", fix:"牆是磁磚。白的，接縫發黃，有幾塊翹起來。", kw:"觀測即固定", cost:1, gain:"這是老公寓那種磁磚。你認得。認得就是固定。" },
+      { t:"看地板", fix:"地板是塑膠地墊，被推車輪子壓出兩道溝，一路通到遠處。", kw:null, cost:1, gain:"兩道溝有方向。有方向就有盡頭。" },
+      { t:"數自己的腳步聲", fix:"腳步聲有回音。回音有間隔。間隔是四拍。", kw:"變動率", cost:1, gain:"四拍。你聽過這個節奏，在別的地方。", spawn:"四拍" },
+    ]},
+  { id:"blank", void:"一排一排的日子。每一天都有位置，可是沒有一天有內容。",
+    obs:[
+      { t:"翻其中一天", fix:"那一天是空的。不是被撕掉，是從來沒有被寫過。", kw:"空白年間", cost:2, gain:"可以被隨意刪除、更改的一段時間軸——狹間裡到處都是。" },
+      { t:"找今天", fix:"你找到今天了。今天也是空的。", kw:"存在係數", cost:2, gain:"★ 你正站在一個沒有內容的日子裡。那你算不算發生過。", spawn:"今天" },
+      { t:"往前翻，找有字的那一天", fix:"翻了很久。有一天上面有字，字很淡，只寫了一個時間。", kw:null, cost:2, gain:"不是你寫的。可是那個筆跡你認得。", spawn:"寫過字的那一天" },
+    ]},
+  { id:"lab", void:"桌子的形狀。上面攤著紙的形狀。你伸手，摸得到硬度，但摸不到邊。",
+    obs:[
+      { t:"讀那些紙", fix:"是收容記錄。編號、日期、處置。字跡工整，中間停過四次。", kw:"收容", cost:1, gain:"停四次，是為了等人抄完。這是講給人聽的節奏。" },
+      { t:"找自己的編號", fix:"有一頁是空白的。編號欄填好了，名字欄是空的。", kw:null, cost:2, gain:"空的那一格在等你。你只要看清楚，它就會有名字。", spawn:"空白頁", page:true },
+      { t:"把紙翻過去，不讀", fix:"紙的背面是空的。你把它壓回桌上。", kw:null, cost:0, gain:"你沒有讀。這一格沒有成立。", calm:1 },
+    ]},
+  { id:"stair", void:"往下或往上，這件事還沒決定。你踩上去的時候它才決定要當哪一種。",
+    obs:[
+      { t:"決定它是往下", fix:"往下。十七階，轉一次，再十七階。", kw:null, cost:1, gain:"往下走比較快。也比較深。" },
+      { t:"決定它是往上", fix:"往上。階梯很高，一階要抬兩次腿。", kw:null, cost:1, gain:"往上走比較慢。可是上面有光。" },
+      { t:"站著不動，等它自己決定", fix:"它沒有決定。你站了很久。", kw:"狹間", cost:0, gain:"狹間不會替你決定任何事。它只是等。", calm:1 },
+    ]},
+  { id:"mirror", void:"一片反光的東西。裡面有一個形狀跟你一樣，可是它比你早半拍。",
+    obs:[
+      { t:"看它的臉", fix:"那是你的臉。左右沒有反過來。", kw:"意聚生物", cost:2, gain:"鏡子會反過來。這個沒有。所以那不是鏡子。", spawn:"早半拍的" },
+      { t:"看它的手", fix:"它的手上有東西。你的沒有。", kw:"無界牽引", cost:2, gain:"它手裡是你還沒想到要拿的東西。", spawn:"早半拍的" },
+      { t:"閉上眼睛走過去", fix:"你閉著眼睛穿過去了。什麼都沒有發生。", kw:null, cost:0, gain:"沒看，就沒有成立。你把它留成一團還沒定型的東西。", calm:1 },
+    ]},
+  { id:"radio", void:"有聲音，可是沒有來源。像是無線電，可是頻道還沒被分配。",
+    obs:[
+      { t:"聽內容", fix:"「⋯⋯目標仍在擴散。重複，目標仍在擴散。」", kw:"收容", cost:2, gain:"目標。他們在講的目標，用的是單數。", spawn:"收容隊" },
+      { t:"聽聲音本身", fix:"那是一個女聲。平的，合成的，可是尾音有一個地方很像真人。", kw:"殘響", cost:1, gain:"你聽得出頻率。這是你的能力，不是你的錯覺。" },
+      { t:"關掉", fix:"你把它關掉了。安靜下來之後，你發現安靜本身也有聲音。", kw:null, cost:0, gain:"你選擇不知道。這一次。", calm:1 },
+    ]},
+  { id:"garden", void:"開闊的感覺。腳下軟軟的。可能是草，可能不是。",
+    obs:[
+      { t:"蹲下來摸", fix:"是草。有露水，冷的。草的邊緣會割手。", kw:null, cost:1, gain:"割手的草。這是真的草該有的樣子。" },
+      { t:"找光源", fix:"沒有太陽。光是從地面往上的，均勻，沒有影子。", kw:"狹間", cost:1, gain:"沒有影子。沒有影子的地方，東西站不住。" },
+      { t:"叫一個人的名字", fix:"你叫了。名字出口的那一瞬間，遠處有東西站起來了。", kw:"意聚生物", cost:3, gain:"★ 你想到誰，誰就會來。這是意聚，不是巧合。", spawn:"被叫來的" },
+    ]},
+  { id:"armory", void:"牆邊掛著一排形狀。你知道那是什麼，因為你每天早上都在充它。",
+    obs:[
+      { t:"把武裝叫出來", fix:"刀、槍、懸浮盾、駭入、手電筒。五種常備型態，一種一種展開，指示燈是滿的。", kw:"特勤武裝", cost:1, gain:"指示燈是滿的。可是這裡沒有源能——這一格的電是你想出來的。" },
+      { t:"數無人機", fix:"數目對得上。一台都沒有少。", kw:"源能", cost:1, gain:"可是你剛剛明明拆過。★ 這個地方在替你補，補得太乾淨了。它在照著你的印象長。" },
+      { t:"多拿一把備品", fix:"架子最下層有一包零件，標籤是空的。你拿了。", kw:null, cost:1, gain:"你不確定這算不算偷。武裝匣沒有意見。", item:"零件" },
+      { t:"不叫出來，空手走", fix:"你把手放下。武裝匣安安靜靜掛在那裡。", kw:null, cost:0, gain:"空手的人不會被誤認成武器。", calm:1 },
+    ]},
+  { id:"watch", void:"地上有一個小東西。金屬的形狀，闔著。你還沒決定它是什麼。",
+    obs:[
+      { t:"撿起來看", fix:"一副懷錶。編號被磨掉了，磨得很平。要磨到這麼平，得花很久。", kw:"載具", cost:1, gain:"★ 《給穿越世界的你》裡寫過這種懷錶。書上沒有寫編號是什麼意思——磨掉它的人，大概也不想有人知道。" },
+      { t:"打開它", fix:"錶面裡的小窗一直在跳，跳得看不清數字。指針走得比秒快。", kw:"變動率", cost:2, gain:"★ 它在對一條不存在的線報數。它不是壞，它只是在講一個還沒發生的地方。", spawn:"還在跳的" },
+      { t:"不撿，繞過去", fix:"你繞過去了。走出十步之後，它在你前面的地上。", kw:null, cost:0, gain:"你沒有撿它。可是它在等你。錶會等人。", calm:1 },
+    ]},
+  { id:"pull", void:"一個東西掉在地上，離你三步。你想拿。",
+    obs:[
+      { t:"走過去撿", fix:"你走了三步，蹲下來，撿起來。是一支筆。", kw:null, cost:1, gain:"很普通的一支筆。普通到它一定是真的。" },
+      { t:"把它拉過來", fix:"它飛進你手裡。乾淨俐落，停在該停的地方。", kw:"界限吸引", cost:1, gain:"有邊界，收得回來。你以前就是這樣的。" },
+      { t:"把它拉過來——用力一點", fix:"它飛進你手裡。連同旁邊的東西、地板的一角、還有你身後三公尺的空氣。", kw:"無界牽引", cost:3, gain:"★ 沒有停。它不知道什麼時候該停，因為它沒有邊界了。", spawn:"被拉過來的" },
+    ]},
+  { id:"child", void:"比你矮的形狀。它站在那裡，沒有動。",
+    obs:[
+      { t:"蹲下來平視", fix:"那是一個小孩。穿防護衣，臉看不清楚，只看得到眼睛。", kw:"意聚生物", cost:2, gain:"你認識這種防護衣。探病要穿的那種。", spawn:"穿防護衣的" },
+      { t:"問他叫什麼名字", fix:"他沒有回答。他只是把手抬起來，指著你身後。", kw:null, cost:2, gain:"你身後本來什麼都沒有。★ 現在有了。", spawn:"被指出來的" },
+      { t:"繞過去", fix:"你繞過他，沒有停。走了十步之後才敢回頭——他還在原地。", kw:null, cost:0, gain:"他沒有跟上來。這件事讓你比較安心，也比較不安心。", calm:1 },
+    ]},
+  { id:"canteen", void:"一張桌子的形狀。上面擺著碗的形狀。數目不確定。",
+    obs:[
+      { t:"數碗", fix:"九個。全部是空的，全部是乾的。", kw:null, cost:1, gain:"九個。你不知道為什麼是九個——可是在這裡，九這個數字看起來特別對。" },
+      { t:"坐下來", fix:"你坐下來了。椅子有高度，桌面有溫度。", kw:"觀測即固定", cost:1, gain:"坐下來就是承認這裡可以坐。承認就是固定。" },
+      { t:"把碗一個一個翻過來", fix:"最後一個底下壓著一張紙。上面只有八個字。", kw:"變動率", cost:2, gain:"§ 那八個字跟你腦子裡的一模一樣，包括還沒填的那幾位。", spawn:"翻過來的碗" },
+    ]},
+  { id:"vein", void:"地上有一條線。不是畫的，是地本身裂開的形狀。裡面有東西在流。",
+    obs:[
+      { t:"蹲下來看裡面流的是什麼", fix:"是光。很稀的光，慢慢地走，走的路線有分岔。", kw:"靈脈", cost:2, gain:"天然的源能管道。可是這裡不該有——狹間沒有地底。", spawn:"流過去的" },
+      { t:"把手放進去", fix:"冷的。冷到你的手指有一瞬間看不見。", kw:null, cost:2, gain:"★ 放進去的那一段手，回來的時候比放進去的時候年輕。", spawn:"少掉的那一段" },
+      { t:"跨過去", fix:"你跨過去了。線在你腳下，沒有反應。", kw:null, cost:0, gain:"你沒有碰它。它也沒有碰你。", calm:1 },
+    ]},
+  { id:"door2", void:"一扇門。它已經是門了，這件事很奇怪——這裡的東西都要你看過才會是。",
+    obs:[
+      { t:"看門把", fix:"門把是黃銅的，被握到發亮。握的位置比你的手低一點。", kw:null, cost:1, gain:"比你低一點。所以握它的人比你矮。" },
+      { t:"敲門", fix:"你敲了兩下。裡面有人說了一句話，兩個字。", kw:"觀測即固定", cost:2, gain:"「請進。」★ 你聽得很清楚。清楚到它已經成立了。", spawn:"門後面的" },
+      { t:"不敲，直接走", fix:"你走過去了。走了十步之後，那扇門在你前面。", kw:null, cost:0, gain:"門會等人。這一點跟錶一樣。", calm:1 },
+    ]},
+  { id:"archive2", void:"一整面牆的抽屜。每一個都有編號，編號是連號的，一直連到看不見的地方。",
+    obs:[
+      { t:"拉開最近的一個", fix:"裡面是一疊紙。第一頁寫著一個人的名字和一個日期。", kw:"收容", cost:1, gain:"日期是未來。這個人還沒有出生。" },
+      { t:"找編號最大的那一個", fix:"你走了很久才走到底。最後一個抽屜是拉不開的——因為它還沒有被編號。", kw:"存在係數", cost:2, gain:"★ 那一格在等這一輪結束。" },
+      { t:"把抽屜全部推回去", fix:"你一路推回去，推到聽不見聲音。", kw:null, cost:0, gain:"你沒有讀任何一份。它們就繼續是紙。", calm:1 },
+    ]},
+  { id:"growth", void:"一排針。玻璃管，透明的液體，標籤上的字被刮掉了。",
+    obs:[
+      { t:"看標籤剩下的部分", fix:"刮掉的字下面還看得出兩個筆畫。是「長」和「劑」。", kw:"生長劑", cost:2, gain:"一針很貴。打完人會直接長大——身體長大。" },
+      { t:"拿起一支", fix:"比你想的重。液體在裡面沒有晃——你倒過來看，它也不動。", kw:null, cost:2, gain:"★ 你不記得自己幾歲。你記得的是別人告訴你的那個數字。", spawn:"不合的年紀" },
+      { t:"放著不動", fix:"你把手收回來。針還在原位。", kw:null, cost:0, gain:"你沒有碰。那一排針就繼續是形狀。", calm:1 },
+    ]},
+  { id:"dive", void:"一個很像螢幕的東西。上面有三個資料夾，名字分別是過去、現在、未來。",
+    obs:[
+      { t:"點開「過去」", fix:"裡面是每一天、每個事件的資料。整整齊齊，可以刪。", kw:"深駭", cost:2, gain:"把界域當成一台電腦。要刪的刪，沒有東西的地方貼上去。" },
+      { t:"點開「現在」", fix:"裡面只有一個檔案。檔名是你的編號。", kw:"觀測即固定", cost:3, gain:"★ 你點開了。所以「現在」有內容了，而那個內容是你。", spawn:"現在裡面的" },
+      { t:"關掉螢幕", fix:"畫面暗下去。你在暗掉的螢幕上看見自己的臉。", kw:null, cost:0, gain:"你沒有看內容。可是你看見了自己。", calm:1 },
+    ]},
+  { id:"body", void:"一個躺著的形狀。跟你一樣大，一樣的姿勢。",
+    obs:[
+      { t:"看它的臉", fix:"沒有臉。不是被毀掉，是還沒有長。", kw:"源軀", cost:2, gain:"塑出來的身體。它在等一個人住進去。", spawn:"空著的" },
+      { t:"躺到它旁邊", fix:"你躺下去了。你們兩個一樣長。", kw:null, cost:2, gain:"★ 躺著的時候你發現：你分不出來剛剛是誰躺在這裡。", spawn:"一樣長的" },
+      { t:"站起來走開", fix:"你退了兩步就走了。沒有回頭。", kw:null, cost:0, gain:"它還躺在那裡。你沒有給它臉。", calm:1 },
+    ]},
+  { id:"three", void:"三個一模一樣的東西擺成一排。你看第一個的時候第二個會動。",
+    obs:[
+      { t:"只看第一個", fix:"第一個成立了。第二個和第三個變得比較淡。", kw:"三次定律", cost:2, gain:"一件事要成立三次才算數。你剛剛用掉一次。" },
+      { t:"三個一起看", fix:"三個同時成立。它們立刻黏成一個，比原本大三倍。", kw:null, cost:3, gain:"★ 一次用完三次。這樣算數，可是代價是它現在很大。", spawn:"三倍大的" },
+      { t:"轉過身", fix:"你背對它們。背後有東西在動，動了三下。", kw:null, cost:0, gain:"你沒有看。所以它們還是三個可能。", calm:1 },
+    ]},
+  { id:"cafe", void:"一張桌子，兩張椅子。其中一張是拉開的。",
+    obs:[
+      { t:"坐拉開的那張", fix:"你坐下來。桌上有一杯還溫的東西。", kw:null, cost:1, gain:"還溫的。所以剛剛有人在。或者，剛剛有人快要在。" },
+      { t:"看對面那張椅子", fix:"對面坐著一個人。你看過去的時候她才坐下——不是她剛到，是她剛成立。", kw:"意聚生物", cost:3, gain:"★ 你希望有人陪你。這個念頭凝成了她。", spawn:"坐對面的" },
+      { t:"兩張都不坐", fix:"你站著把那杯喝完了。味道是你記憶裡的味道。", kw:null, cost:0, gain:"你沒有給任何人位子。", calm:1 },
+    ]},
+  { id:"field", void:"一整片。看不出是什麼，因為它一直在換。有時候像雪，有時候像沙。",
+    obs:[
+      { t:"決定它是雪", fix:"是雪。踩下去有聲音，鞋子會濕。", kw:null, cost:1, gain:"你決定的。這一片從現在起一直都是雪。" },
+      { t:"決定它是沙", fix:"是沙。踩下去沒有聲音，鞋子會滿。", kw:null, cost:1, gain:"你決定的。這一片從現在起一直都是沙。" },
+      { t:"讓它繼續換", fix:"它繼續換。雪、沙、雪、沙，速度慢慢變快。", kw:"狹間", cost:0, gain:"沒有被決定的東西不會停下來。這就是狹間。", calm:1 },
+    ]},
+  { id:"noise", void:"一個很吵的地方。可是你聽不出是什麼在吵。",
+    obs:[
+      { t:"把它聽成人聲", fix:"是人聲。很多人在同時講話，講的都是同一句。", kw:"殘響", cost:2, gain:"他們在念一組八位數。你的那一組。", spawn:"念數字的" },
+      { t:"把它聽成機器", fix:"是機器。同一個週期，沒有停過。", kw:"可能渠", cost:2, gain:"★ 模擬用的機器。在這裡面找到的可能性，會被拿去實踐。" },
+      { t:"摀住耳朵", fix:"安靜了。你聽見自己的心跳，四拍一組。", kw:null, cost:0, gain:"你沒有給它身分。它就繼續是噪音。", calm:1 },
+    ]},
+  { id:"window", void:"牆上有一個亮的方塊。你還沒決定它是窗還是螢幕。",
+    obs:[
+      { t:"決定它是窗", fix:"是窗。外面是一座城，招牌一路亮到街尾，在洗過的柏油上又亮了一次。", kw:null, cost:2, gain:"你看過這座城。你不記得是什麼時候。", spawn:"城裡的" },
+      { t:"決定它是螢幕", fix:"是螢幕。上面播的是你剛剛走過的那幾個房間，從別的角度拍的。", kw:"收容", cost:2, gain:"★ 有人一直在看。而且他們比你早到。", spawn:"一直在看的" },
+      { t:"背對它", fix:"你背對它坐下來。亮的東西在你背後，把你的影子印在前面的牆上。", kw:null, cost:0, gain:"影子有兩個。你只有一個。", calm:1 },
+    ]},
+  { id:"bridge", void:"一段橋的形狀。橋的兩端都還沒有接到東西。",
+    obs:[
+      { t:"先看這一端", fix:"這一端接在你腳下。實心的，走得過去。", kw:null, cost:1, gain:"你這邊成立了。另一邊還沒有。" },
+      { t:"先看另一端", fix:"另一端接在一個你沒有走過的地方。那個地方因為你看了它，開始長。", kw:null, cost:2, gain:"★ 你替一個你沒去過的地方，決定了它存在。", spawn:"橋那邊的" },
+      { t:"不走橋", fix:"你沿著岸走。走了很久，岸沒有盡頭。", kw:null, cost:0, gain:"沒有橋，也就沒有兩岸。", calm:1 },
+    ]},
+  { id:"letter", void:"一個小小的方形。像信封，可是還沒有封口，也還沒有字。",
+    obs:[
+      { t:"寫上收件人", fix:"你寫了一個名字。寫完的瞬間，信封變厚了。", kw:null, cost:2, gain:"★ 你寫的那個人，現在一定存在——不然信寄不出去。", spawn:"收信的" },
+      { t:"拆開來看", fix:"裡面是十五個字。你讀完了，可是讀完之後你想不起來是哪十五個。", kw:"變動率", cost:2, gain:"★ 十五個字。你知道這個規格。" },
+      { t:"放回去", fix:"你把它放回原位，沒有寫，也沒有拆。", kw:null, cost:0, gain:"沒有收件人的信不會寄出去，也不會消失。", calm:1 },
+    ]},
+  { id:"elevator", void:"一個會動的小房間。門開著，裡面的按鈕比樓層多。",
+    obs:[
+      { t:"看按鈕", fix:"一到十二樓，然後是「B」「BB」「BBB」，最後一顆沒有字，被按得最舊。", kw:null, cost:2, gain:"沒有字的那一顆被按得最舊。★ 去那一層的人最多。", spawn:"沒有字的樓層" },
+      { t:"按十二樓", fix:"門關上。上升的感覺持續了很久，久到不像在上升，像在離開。", kw:null, cost:1, gain:"樓層顯示器一直是 12。可是你還在上升。" },
+      { t:"按「B」", fix:"門關上又打開。外面還是剛剛的地方——可是所有東西都往左移了三公分。", kw:null, cost:2, gain:"★ 你回來的不是原本那一間。是隔壁那一格可能性。" },
+      { t:"不搭，走樓梯", fix:"你繞過它。門在你背後慢慢關上，關到剩一條縫的時候停住了。", kw:null, cost:0, gain:"它在等你改變主意。電梯很有耐心。", calm:1 },
+    ]},
+  { id:"phone", void:"鈴聲。一座公共電話，這年頭不該還有的東西，響著。",
+    obs:[
+      { t:"接起來", fix:"聽筒裡是你自己的聲音，在講你明天才會講的話。", kw:null, cost:2, gain:"★ 你聽到自己說「不要接電話」。可是你已經接了。", spawn:"接起來的" },
+      { t:"數它響幾聲", fix:"十七聲。停了。然後重新開始數——你發現這次你數的跟它響的對不上。", kw:null, cost:1, gain:"差一聲。你數的永遠比它多一聲，或少一聲。" },
+      { t:"把話筒拿起來放旁邊", fix:"鈴聲停了。安靜下來的那一瞬間，你發現自己也把肩膀放了下來。", kw:null, cost:0, gain:"你沒有聽。它講給空氣聽，講完就沒了。", calm:1 },
+      { t:"拔電話線", fix:"線的另一頭不在牆上。線一直延伸到黑暗裡，繃得很緊。", kw:null, cost:3, gain:"★ 有東西在另一頭拉著。而你剛剛扯了它一下。", spawn:"線另一頭的" },
+    ]},
+  { id:"under", void:"腳下有聲音。很輕的、有耐心的、從地板下面來的敲擊。",
+    obs:[
+      { t:"蹲下來聽", fix:"三下。停。三下。停。是一種問句的節奏。", kw:null, cost:2, gain:"它在問。敲三下是「有人在嗎」。", spawn:"地板下的" },
+      { t:"敲回去", fix:"你敲了三下。下面安靜了很久，然後——敲了四下。", kw:null, cost:3, gain:"★ 對話成立了。你不知道四下是什麼意思，可是它知道你在。", spawn:"地板下的" },
+      { t:"站著不動", fix:"敲聲繼續。它不急。它敲了很久了，聽得出來。", kw:null, cost:0, gain:"你不回應。它就繼續當背景音。背景音不會成立。", calm:1 },
+    ]},
+  { id:"vending", void:"一台販賣機。亮著。商品的位置上放的不是飲料。",
+    obs:[
+      { t:"看商品", fix:"「普通的一天」「有人等你回家」「不用解釋的沉默」——每一格都有標價。", kw:null, cost:1, gain:"標價是你看不懂的單位。可是你覺得不貴。" },
+      { t:"投幣買「普通的一天」", fix:"匡啷。掉出來一個罐子，拿在手裡溫溫的。這個溫度不是機器給的。", kw:null, cost:2, gain:"★ 罐子上的成分表寫著：日常 87%、無聊 12%、其他 1%。你買到了。", spawn:"買到的那一天", item:"普通的一天" },
+      { t:"搖它", fix:"販賣機晃了兩下，掉出一罐「找零的運氣」。免費的。", kw:null, cost:1, gain:"白撿的。你今天的運氣變好了一點——你自己覺得。", item:"找零的運氣" },
+      { t:"只看不買", fix:"你把每一格都看完，沒有買。販賣機的燈閃了一下，然後恢復原樣。", kw:null, cost:0, gain:"逛街不買是合法的。連在這裡都是。", calm:1 },
+    ]},
+  { id:"gacha", void:"一台扭蛋機。裡面的蛋是霧面的，看不清內容。",
+    obs:[
+      { t:"轉一顆", fix:"蛋裡是一個縮小的房間。跟你現在站的這一間一模一樣，裡面有個很小的你。", kw:null, cost:2, gain:"★ 小的那個你也在看一顆更小的蛋。你決定不繼續想下去。", spawn:"縮小的房間" },
+      { t:"再轉一顆", fix:"蛋裡是一張紙條：「銘謝惠顧。你已經在獎品裡面了。」", kw:null, cost:1, gain:"⋯⋯這台機器的幽默感很差。可是它沒有說錯。" },
+      { t:"看機器側面的說明", fix:"「每顆蛋內容物均為可能性。本機不負責成立。」廠商欄是空的。", kw:null, cost:1, gain:"不負責成立。這台機器比這整個地方誠實。" },
+      { t:"不轉", fix:"你把手上的零錢收回口袋。零錢什麼時候在你口袋裡的，你不想追究。", kw:null, cost:0, gain:"不轉就不會中。也不會不中。", calm:1 },
+    ]},
+  { id:"consoles", void:"三台遊戲機疊在一起，接線整整齊齊。有一台的外殼被拆過又裝回去。",
+    obs:[
+      { t:"開機", fix:"三台一起亮了。畫面上是同一個遊戲的三個進度，都停在最後一關。", kw:null, cost:1, gain:"三個存檔的名字是同一個。都沒有打完。" },
+      { t:"看拆過的那台", fix:"裡面少了零件。少的位置很整齊——拿的人很清楚自己要什麼。", kw:"遊戲機", cost:1, gain:"★ 拿走零件的人沒有留字條。會把線整整齊齊接回去的人，通常不覺得自己欠一張字條。" },
+      { t:"玩一下", fix:"你打完了最後一關。三台機器同時跳出「THE END」，然後同時關機。", kw:null, cost:2, gain:"★ 有三個沒打完的故事因為你結束了。你不確定這算幫忙還是算多事。", spawn:"打完的存檔" },
+      { t:"關掉電源", fix:"你把延長線拔了。三個畫面暗下去，房間比剛才安靜。", kw:null, cost:0, gain:"沒打完就讓它沒打完。有些存檔的意義就是停在那裡。", calm:1 },
+    ]},
+  { id:"pudding", void:"一張小桌子，九個布丁，排成一圈。少了一個的缺口特別顯眼。",
+    obs:[
+      { t:"數一次", fix:"八個。缺的那一格有一支小湯匙，用過，舔得很乾淨。", kw:"布丁", cost:1, gain:"有人吃掉了第九個。吃得很認真。" },
+      { t:"吃一個", fix:"很好吃。焦糖的部分特別好。你吃完把湯匙擺好，跟缺口那格的擺法一樣。", kw:null, cost:1, gain:"★ 現在少兩個了。下一個來的人會以為原本就是七個。", heal:10 },
+      { t:"把缺口補起來", fix:"你把八個重新排成完整的一圈。看不出少過。", kw:null, cost:2, gain:"★ 你剛剛竄改了一件事實。這裡的事實很好竄改。" },
+      { t:"不動它們", fix:"九減一等於八。這件事不需要你修正。", kw:null, cost:0, gain:"缺口也是擺設的一部分。誰吃的就讓誰負責。", calm:1 },
+    ]},
+  { id:"survey", void:"一張桌子，一個人形的輪廓坐在後面，推過來一張問卷。",
+    obs:[
+      { t:"接過問卷", fix:"第一題：「您對本狹間的整體體驗滿意嗎？（一到五顆星）」", kw:null, cost:1, gain:"★ 它在收集回饋。連這裡都在收集回饋。" },
+      { t:"認真填完", fix:"你填了。意見欄你寫了「房間可以多一點」。輪廓點了點頭，把問卷收走。", kw:null, cost:2, gain:"★ 它看起來真的會處理。你不確定這是好事。", spawn:"收問卷的" },
+      { t:"給一顆星", fix:"輪廓停頓了一下。整個房間的燈暗了半格，過了幾秒才恢復。", kw:null, cost:1, gain:"⋯⋯它在意。這個地方在意你給幾顆星。" },
+      { t:"拒填", fix:"你把問卷推回去。輪廓聳了聳肩，在自己的表格上勾了「無效樣本」。", kw:null, cost:0, gain:"你成功地沒有變成數據。今天第一次。", calm:1 },
+    ]},
+  { id:"cat", void:"有一隻貓。牠坐在正中央，看著你。",
+    obs:[
+      { t:"跟牠對看", fix:"牠不眨眼。你先眨了。牠看起來對這個結果很滿意。", kw:"觀測即固定", cost:2, gain:"★ 牠在觀測你。以這裡的規則——你剛剛被牠固定了一點。", spawn:"那隻貓" },
+      { t:"摸牠", fix:"毛是溫的。牠讓你摸了三下，第四下站起來走開，尾巴豎得筆直。", kw:null, cost:1, gain:"三下。牠的規矩很明確。", heal:6 },
+      { t:"餵牠", fix:"你口袋裡剛好有東西可以餵。你不追究為什麼剛好有。牠吃了。", kw:null, cost:1, gain:"牠記住你了。在這個地方被記住，是雙面刃。", spawn:"那隻貓" },
+      { t:"不理牠", fix:"你走你的。牠跟了三步，坐下，換一個角度繼續看你。", kw:null, cost:0, gain:"牠沒有堅持。貓的觀測是免費的，牠說了算。", calm:1 },
+    ]},
+  { id:"footbath", void:"熱氣。一排足湯池，水溫剛好，池邊擺著捲好的毛巾。",
+    obs:[
+      { t:"泡", fix:"你把鞋襪脫了坐下去。溫度從腳底上來，肩膀鬆掉的時候你才發現它一直是緊的。", kw:null, cost:1, gain:"這裡的水不知道從哪來。可是它是熱的，這樣就夠了。", heal:16 },
+      { t:"只泡手", fix:"你蹲在池邊泡手。有點蠢，可是很舒服。", kw:null, cost:0, gain:"半套的放鬆也是放鬆。", heal:8, calm:1 },
+      { t:"看毛巾", fix:"毛巾捲得非常整齊，數量剛好比你需要的多一條。", kw:null, cost:1, gain:"★ 多的那一條是給誰的。你決定不問。" },
+      { t:"把水攪亂", fix:"你用腳攪了一圈。水紋擴出去，碰到池邊回彈，交錯成一瞬間的格子。", kw:null, cost:1, gain:"水紋的格子跟讀數的格子有一秒鐘長得一樣。你假裝沒看到。" },
+    ]},
+  { id:"kotatsu", void:"一張被爐。桌上有剝好的橘子。棉被掀開一角，掀的角度剛好可以直接坐進去。",
+    obs:[
+      { t:"鑽進去", fix:"暖。非常暖。你聽見自己想「再五分鐘就走」。", kw:null, cost:0, gain:"★ 這裡的五分鐘不保證是五分鐘。可是好暖。", heal:14, calm:1 },
+      { t:"吃橘子", fix:"剝好的。有人剝好的。你邊吃邊決定不去想是誰剝的。", kw:null, cost:1, gain:"很甜。剝的人挑得很好。", heal:8 },
+      { t:"看桌腳", fix:"四隻桌腳都墊著摺起來的紙。抽出來看，是同一張傳單印了四份。", kw:null, cost:1, gain:"傳單上是這附近的地圖。你看不懂，可是有人需要過它。" },
+      { t:"掀開棉被看下面", fix:"沒有東西。就是被爐該有的樣子。你莫名鬆了一口氣。", kw:null, cost:2, gain:"★ 你檢查了。檢查這個動作本身，說明你已經不信任「該有的樣子」。" },
+    ]},
+  { id:"noodle", void:"一個麵攤。爐上有湯，冒著真的蒸氣。攤子後面沒有人。",
+    obs:[
+      { t:"坐下來等", fix:"你坐了一會兒。湯的味道很好，好到你覺得攤主只是剛好走開。", kw:null, cost:1, gain:"椅子有兩張。另一張的座墊是凹的，剛有人坐過。" },
+      { t:"自己盛一碗", fix:"你盛了。吃完把碗洗好倒扣，錢壓在碗底下。", kw:null, cost:1, gain:"★ 你不知道多少錢，就照你覺得對的放。這裡沒有人找零，也沒有人計較。", heal:12 },
+      { t:"看湯裡", fix:"湯很清。底下沉著的料排得整整齊齊。這種整齊是排給人看的。", kw:null, cost:2, gain:"排給誰看。你往攤子後面看了一眼，那裡還是沒有人。" },
+      { t:"留一張紙條", fix:"你寫了「很好吃」壓在調味罐下面。字醜，可是是真心的。", kw:null, cost:0, gain:"下一個路過的人會看到。或者攤主會。反正有人會。", calm:1 },
+    ]},
+  { id:"queue", void:"一條隊伍的形狀。繩子拉出蜿蜒的走道，可是隊伍裡沒有人。",
+    obs:[
+      { t:"排進去", fix:"你照著繩子繞。繞了四折之後你聽見自己前面有腳步聲，保持著禮貌的距離。", kw:null, cost:2, gain:"★ 你排在某個東西後面。它也在排。", spawn:"排在前面的" },
+      { t:"直接走到最前面", fix:"櫃檯的燈亮著，鈴擺在正中央。上面貼著「請按鈴」。", kw:null, cost:1, gain:"沒有人排隊，可是規則還在。規則比人活得久。" },
+      { t:"按鈴", fix:"叮。某個地方傳來椅子拉開的聲音，由遠而近。", kw:null, cost:3, gain:"★ 有人要來服務你了。你突然不確定你要辦什麼。", spawn:"被叫來服務的" },
+      { t:"從繩子底下鑽過去", fix:"你抄了捷徑。沒有人阻止你。你有一點點失望。", kw:null, cost:0, gain:"違規要有人抓才算數。這裡沒有，所以你只是走了直線。", calm:1 },
+    ]},
+  { id:"counting", void:"一個聲音在數數。數到某個數字就回頭重數，每次回頭的數字都不一樣。",
+    obs:[
+      { t:"聽它數到哪", fix:"一、二、三、四、五。回頭。一、二、三、四、五。永遠在五停下來。", kw:null, cost:2, gain:"★ 它在數六樣東西，可是永遠只數到五。有一樣它看不見。", spawn:"數數的" },
+      { t:"跟著數", fix:"你跟著數。數到五的時候你順口補了「六」。聲音停了。", kw:null, cost:3, gain:"★ 很長的安靜。然後它重新開始數——這次數到了六。你幫它補上的。", spawn:"數數的" },
+      { t:"搗住耳朵走過去", fix:"你聽不見它，它繼續數它的。互不相欠。", kw:null, cost:0, gain:"有些數學題不需要你參與。", calm:1 },
+    ]},
+  { id:"wardrobe", void:"一個衣櫃。門縫透出一條暖黃色的光，高度大概是一盞小燈的高度。",
+    obs:[
+      { t:"打開", fix:"裡面掛著一排外套，全部是同一件，尺寸從小到大排過去。", kw:null, cost:2, gain:"★ 最小的那件很小。最大的那件比你大。從左到右看過去，一件比一件舊。", spawn:"掛著的外套" },
+      { t:"敲門再開", fix:"你敲了兩下才開。裡面的燈滅了，外套也不見了，就是個普通的空衣櫃。", kw:null, cost:1, gain:"禮貌會改變結果。在這裡，禮貌是一種觀測方式。" },
+      { t:"關緊它", fix:"你把門扣上。光從門縫裡消失，房間暗了一階。", kw:null, cost:0, gain:"櫃子裡的事讓櫃子自己管。", calm:1 },
+    ]},
+  { id:"lostfound", void:"一個小窗口，牌子寫著「失物招領」。架上的東西都貼著標籤，字跡很工整。",
+    obs:[
+      { t:"領「不是你的布丁」", fix:"標籤上就這樣寫。窗口裡沒有人，可是有一隻手把布丁推了出來。", kw:null, cost:1, gain:"你沒有掉過布丁。可是現在你有一個了。", item:"布丁" },
+      { t:"領「一小包零件」", fix:"牛皮紙袋，掂起來有重量。標籤：「拼得回去的那種」。", kw:null, cost:1, gain:"★ 無人機的零件。在這座什麼都補不回來的城市裡，這一包不合理得很珍貴。", item:"零件" },
+      { t:"領「寫錯的名牌」", fix:"一個名牌，上面的名字差一個字。差哪個字，看的人自己知道。", kw:null, cost:1, gain:"寫錯的名字是有用的。對著某些東西喊錯名字，牠會非常、非常生氣。", item:"錯誤的名字" },
+      { t:"什麼都不領", fix:"你看了一圈，沒有一樣是你的。你把窗口的小鈴按了一下表示謝謝。", kw:null, cost:0, gain:"不是你的就不要拿。這個原則在這裡尤其重要。", calm:1 },
+    ]},
+  { id:"door", void:"一個開口。它現在還不算門，因為兩邊都還沒成立。",
+    obs:[
+      { t:"看門的這一側", fix:"這一側是水泥，有手印。很多手印，高度都一樣。", kw:null, cost:1, gain:"高度一樣，表示同一個人推過很多次。" },
+      { t:"看門的另一側", fix:"另一側是白的。太白了，看不出距離。", kw:"收束", cost:2, gain:"那不是牆，那是還沒被寫的地方。" },
+      { t:"推開它", fix:'', kw:null, cost:0, gain:'', exit:true },
+    ]},
+];
+
+/* ── 追你的東西　★ 由 src/rooms.py 產生 ─────────────── */
+const HUNTER = {
+  "四拍":{ d:"一個有節奏的東西。它換方向的間隔是四拍，一次都沒有亂過。你數得出來——這既是好事也是壞事。" },
+  "今天":{ d:"一個沒有內容的日子。它跟著你，因為你在它裡面。你走到哪它就是哪一天。" },
+  "寫過字的那一天":{ d:"唯一有內容的一天，所以它比其他日子重。它壓在你後面。" },
+  "空白頁":{ d:"一張紙。它會出現在你走過的每一個房間的桌上，編號欄一直是同一個號碼。" },
+  "早半拍的":{ d:"跟你一樣的形狀，可是它比你早半拍。你伸手之前它已經伸過了。" },
+  "收容隊":{ d:"八個人，武裝全開。他們沒有在追你——他們在收束你走過的地方，從後面一格一格固定下來。" },
+  "被叫來的":{ d:"你叫的那個名字。它按照你記得的樣子長出來，包括你記錯的部分。" },
+  "還在跳的":{ d:"那副懷錶。你沒有帶著它，可是每一間房間的地上都有一副，小窗都還在跳。" },
+  "被拉過來的":{ d:"一團東西。裡面有筆、有地板、有空氣，還有一點你。它一直在往你這邊靠。" },
+  "穿防護衣的":{ d:"那個小孩。他跟得不快，可是他從來沒有停過。你每次回頭他都在同一個距離。" },
+  "被指出來的":{ d:"你身後那個。你到現在還沒有轉頭看它——所以它還沒有形狀。它在等你看。" },
+  "翻過來的碗":{ d:"九個碗跟著你。它們沒有聲音，可是走過的地方會留下九個圓形的水痕。" },
+  "流過去的":{ d:"那條線裡的光。它離開地縫了，順著你走過的路在跑。" },
+  "少掉的那一段":{ d:"你的手曾經少掉的那一段。它跟在後面，形狀是手指的形狀。" },
+  "門後面的":{ d:"說「請進」的那一個。它沒有出來，可是每一扇門後面都有它。" },
+  "不合的年紀":{ d:"一個年紀。它跟你不合——比你的身體老，或者比你的身體小。它一直在旁邊要跟你對齊。" },
+  "現在裡面的":{ d:"「現在」那個資料夾裡的東西。檔名是你的編號。它現在有內容了。" },
+  "空著的":{ d:"那個沒有臉的身體。它站起來了。它在找一張臉。" },
+  "一樣長的":{ d:"跟你一樣長的東西。你們並排走。你不確定剛剛躺下的是誰。" },
+  "三倍大的":{ d:"三個黏在一起的那個。它比原本大三倍，可是它只有一個。" },
+  "坐對面的":{ d:"坐在你對面的人。她是你希望有人陪你的那個念頭凝出來的，所以她很像。" },
+  "念數字的":{ d:"很多人的聲音。他們在念你的那組八位數，念到還沒填的那幾位就停下來等。" },
+  "城裡的":{ d:"那座城裡的東西。招牌一路亮到街尾，可是街上沒有人。" },
+  "一直在看的":{ d:"螢幕另一邊的。他們比你早到，而且他們有你走過每一間房間的畫面。" },
+  "橋那邊的":{ d:"你替它決定存在的那個地方。它現在也想替你決定一件事。" },
+  "收信的":{ d:"你寫在收件人欄上的那個名字。信寄出去了，所以他必須存在。" },
+  "沒有字的樓層":{ d:"那一層。你沒有去，可是電梯記得你看過那顆按鈕。它每一層都停一下，等你。" },
+  "接起來的":{ d:"電話裡的那個你。他比你早一天。他一直想提醒你什麼，可是他能講的你都已經做了。" },
+  "線另一頭的":{ d:"電話線繃著的方向。它沒有靠近，它在收線——一圈、一圈、很有耐心。" },
+  "地板下的":{ d:"敲聲。現在它在你走到哪就從哪的地板下面敲。三下。停。三下。" },
+  "買到的那一天":{ d:"那罐「普通的一天」。它在你口袋裡越來越溫，像很想被打開。" },
+  "縮小的房間":{ d:"那顆蛋。裡面的小房間裡的小你，做的動作跟你慢半拍地一樣。" },
+  "打完的存檔":{ d:"三個被你打完的故事。它們跟著你，片尾名單一直沒有跑完。" },
+  "收問卷的":{ d:"那個輪廓。它每隔幾個房間就出現一次，遠遠地，往表格上勾東西。" },
+  "那隻貓":{ d:"牠。距離永遠是三步。牠不追你——牠在做紀錄。" },
+  "排在前面的":{ d:"你前面那個。隊伍在動，它一直保持一個身位。你永遠看不到櫃檯。" },
+  "被叫來服務的":{ d:"腳步聲。由遠而近，非常有服務精神。它一定會找到你，因為你按了鈴。" },
+  "數數的":{ d:"那個聲音。現在它數的東西裡有你。你是第六樣。" },
+  "掛著的外套":{ d:"最大的那一件。它從衣櫃裡出來了，袖口拖在地上，慢慢跟著。" },
+};
+
+/* ── 狀態 ─────────────────────────────────────────── */
+let S;
+function newRun(){
+  RUN++;
+  S = {
+    digits:[null,null,null,null,null,null],   // 小數六位
+    calm:0,          // 沒有觀測的次數（壓制擴散）
+    charge:120,      // 特勤武裝電量
+    drones:6,        // 無人機庫存
+    hunters:[],      // 追來的東西
+    pressure:0,      // 收容壓力
+    drift:0,         // 連續沒有固定任何東西的次數 → 擴散
+    signed:null,     // 有沒有在空白頁上寫下名字
+    room:0,
+    metArc:[],
+    calmstep:false,
+    pocket:[],       // 道具（上限 3）
+    qysN:0, qysDone:false,   // 千隱世巡邏
+    hunt:0, dodged:false, fought:false,   // 追殺
+    ally:null,       // 布丁換來的幫手
+    luck:false,      // 找零的運氣：下一次觀測不加壓
+    pool:shuffle(ROOMS.map((r,i)=>i)),
+    steps:0,
+    over:false,
+  };
+  LOG.innerHTML=''; CH.innerHTML='';
+  head(`第 ${RUN} 次`);
+  say('void','沒有描述。');
+  say('nar','你在一個還沒有被寫下來的地方。');
+  say('nar','你知道自己是誰——這件事本身就是第一個固定下來的東西。');
+  say('sys','讀數 <b>9.??????</b>　整數位 9 ＝ 狹間 ＝ 未成立。<br>六位小數每填一位，這個地方就成立一分。<br><b>填滿了，你就出不去了。</b>');
+  if(ARCHIVE.length){
+    say('sys',`★ 這一輪之前，你被收容過 ${ARCHIVE.length} 次。那些條目還在這裡。`);
+  }
+  unlock('狹間'); unlock('意聚者');
+  render();
+  nextRoom();
+}
+
+/* ── 工具 ───────────────────────────────────────── */
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function say(cls,html){const p=document.createElement('p');p.className=cls+' fade';p.innerHTML=html;LOG.appendChild(p);scroll();}
+function head(t){const d=document.createElement('div');d.className='head fade';d.textContent=t;LOG.appendChild(d);scroll();}
+function scroll(){window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
+function unlock(k){ if(KW[k] && !SEEN_KW.has(k)){ SEEN_KW.add(k); say('sys','§ <span class="gold">－關鍵詞更新－</span>　<b>'+k+'</b>'); } }
+
+function filled(){ return S.digits.filter(d=>d!==null).length; }
+function capOf(){ return 7 + filled(); }
+function vrText(){
+  return '9.' + S.digits.map(d=> d===null ? '<span class="q">?</span>' : '<span class="new">'+d+'</span>').join('');
+}
+function render(){
+  $('#vr').innerHTML = vrText();
+  const pct = filled()/6*100;
+  const cw = Math.max(0,Math.min(100,Math.round(S.charge/120*100)));
+  $('#meters').innerHTML =
+    `第 <b>${S.steps||0}</b> 個地方　`+
+    `成立度 <b>${filled()}/6</b><span class="bar ${pct>66?'warn':''}"><i style="width:${pct}%"></i></span>`+
+    `　武裝 <b>${Math.round(cw)}%</b><span class="bar ${cw<30?'warn':''}"><i style="width:${cw}%"></i></span>`+
+    `　無人機 <b>${S.drones}</b>`+
+    `　追來的 <b>${S.hunters.length}</b>`+
+    (S.ally?`　幫手 <b>${S.ally}</b>`:'')+
+    (S.pocket.length?`　口袋 <b>${S.pocket.join('、')}</b>`:'')+
+    `　收容壓力 <b>${S.pressure}</b>/${capOf()}`+
+    `　擴散 <b>${S.drift}</b>/5`;
+  $('#runinfo').textContent = `第 ${RUN} 次　檔案 ${ARCHIVE.length} 件　關鍵詞 ${SEEN_KW.size}/${Object.keys(KW).length}`;
+}
+
+/* ── 房間流程 ─────────────────────────────────────── */
+function nextRoom(){
+  if(S.over) return;
+  if(filled()>=6){ return converge(); }
+  S.steps++;
+  if(S.pool.length===0) S.pool = shuffle(ROOMS.map((r,i)=>i));
+  const idx = S.pool.pop();
+  const r = ROOMS[idx];
+  S.cur = r;
+  head(`第 ${S.steps} 個地方`);
+  say('void', r.void);
+  // ── 千隱世追殺中 ──
+  if(S.hunt>0){
+    if(S.hunters.length<=2 && S.pressure<capOf()-2){
+      S.hunt=0;
+      say('sys','【街機版此處切回 music.sound603】');
+      say('dim','空氣鬆開了。');
+      say('nar','<span style="color:#7aa96a"><b>綠色外套</b></span>站在房間的另一頭，左輪已經回到腰上。');
+      say('nar','世「──壓回去了。」');
+      say('nar','世「⋯⋯別讓我再來一次。」');
+      say('dim','他把懷錶闔上，走了。走廊的燈在他經過的時候，一盞都沒有閃。');
+    }else if(S.dodged){
+      S.dodged=false;
+      say('dim','腳步聲經過了。離你一面牆。');
+      say('dim','他沒有發現你——或者他發現了，只是把這一間讓給你。');
+      say('red',`追殺中　剩 ${S.hunt} 個房間。`);
+    }else if(S.fought){
+      S.fought=false;
+      S.hunt=Math.min(3,S.hunt+1);
+      say('dim','你被推回來的時候，盾少了兩面。');
+      say('dim','可是他停了三秒。三秒，夠你拉開一個房間。');
+      say('nar','世「⋯⋯有骨氣。」');
+      say('red',`追殺中　剩 ${S.hunt} 個房間。`);
+    }else{
+      S.hunt--;
+      if(S.hunt<=0){
+        say('dim','門沒有開。他就在裡面等你。');
+        say('nar','世「⋯⋯時間到了。」');
+        say('gold','<b>虛幻殺手。</b>');
+        return corrected();
+      }
+      say('red', S.hunt===2?'腳步聲進了同一區。不快。他從來不用跑的。':'上膛的聲音。一發。他只裝了一發——因為一發就夠。');
+      say('red',`<b>追殺中</b>　剩 ${S.hunt} 個房間。追獵者 ≤ 2 且壓力壓下來，他就會停。`);
+    }
+  }
+  // ★★★ 上一輪被收容的自己，會以既存物件的身分出現在這裡。
+  //   這是全作的核心：你死掉留下的條目，是下一個你要面對的東西。
+  if(ARCHIVE.length && !S.metArc.length && Math.random()<0.45){
+    const e = ARCHIVE[Math.floor(Math.random()*ARCHIVE.length)];
+    S.metArc.push(e.no);
+    say('dim','這個地方已經有東西了。');
+    say('red', `<b>${e.no}　${e.name}</b>`);
+    say('dim', e.cls==='已成立'
+      ? '它不是追你的。它就是這裡的一部分——它比這個房間先成立。你走進去的是它的內容。'
+      : '封存的條目。它安安靜靜擺在那裡，像一份沒有人領走的行李。');
+    if(e.cls==='已成立'){ S.pressure += 2; say('sys','壓力 +2　在別人的世界裡，你才是那個不該存在的東西。'); }
+    else { S.charge = Math.min(120, S.charge+12); say('sys','武裝 +12%　它剩下的源能還能用。'); }
+  }
+  // 幫手：站你這邊的那一個
+  if(S.ally){
+    const a0=S.pressure;
+    S.pressure=Math.max(0,S.pressure-1);
+    say('dim',`<b>${S.ally}</b>　走在你旁邊。牠在，這裡就鬆一點。（壓力 ${a0} → ${S.pressure}）`);
+  }
+  // 追來的東西動一步
+  if(S.hunters.length){
+    const h = S.hunters[S.hunters.length-1];
+    if(S.calmstep){
+      say('dim', `${h}　停在原地。它需要你先看它一眼。`);
+    }else{
+      say('dim', `<span class="red">${h}</span>　${HUNTER[h].d}`);
+      S.pressure++;
+      // ★ 你越成立，越難被收容——收容的是「不該存在的東西」，
+      //   而你每固定一格，就多一分「本來就在這裡」。
+      if(S.pressure >= capOf()){ return contained(h); }
+    }
+  }
+  S.calmstep = false;
+  // ── 千隱世（93 代）巡邏：成立度 4 起靠近 ──
+  if(filled()>=4 && !S.qysDone){
+    S.qysN++;
+    if(S.qysN===1){
+      say('dim','<span style="color:#7aa96a">很遠的地方，有一件綠色外套走過。</span>');
+      say('dim','他沒有看你。他在看這個地方。');
+      unlock('千隱世');
+    }else if(S.qysN===2){
+      say('dim','<span style="color:#7aa96a">一聲槍響。很遠，悶悶的。</span>');
+      say('dim','是某個你走過的房間的方向。那個方向的空氣，鬆了一點。');
+      say('sys','★ 他在修正你固定過的地方。');
+      unlock('虛幻殺手');
+    }else{
+      return qysEncounter();
+    }
+  }
+  showRoomChoices();
+  render();
+}
+
+/* 這一間房的所有選項（觀測＋額外動作＋道具）。用道具之後要重畫，所以抽成一支。 */
+function showRoomChoices(){
+  const r=S.cur; if(!r||S.over) return;
+  const opts = r.obs.map((o,i)=>({
+    label:o.t,
+    tag: o.exit ? '出去' : (o.cost===0 ? '不觀測　壓力 −1　擴散 +1　武裝 −3' : `觀測　成立度 +1　壓力 +${o.cost}　武裝 −${6+o.cost*2}`+(o.heal?`　武裝 +${o.heal}`:'')),
+    cls: o.exit ? 'exit' : (o.cost>=2 ? 'danger' : ''),
+    fn:()=>observe(o)
+  }));
+  // 意聚：手上握著的念頭會自己凝
+  if(S.hunters.length>=1 && S.drones>0){
+    opts.push({label:'（停下來，什麼都不想）',tag:'壓力 −3　趕走一隻　成立度 ±0　代價：一台無人機',cls:'',fn:suppress});
+  }
+  if(S.charge<40 && S.drones>0){
+    opts.push({label:'（拆一台無人機補電）',tag:'武裝 +30%　代價：一台無人機',cls:'',fn:cannibal});
+  }
+  // 追殺中的動作
+  if(S.hunt>0){
+    opts.push({label:'（躲起來）',tag:'他這一步不會逼近　壓力 −1　擴散 +1　武裝 −3',cls:'',fn:dodge});
+    if(S.drones>=2){
+      opts.push({label:'（正面對抗）',tag:'打不贏。可是牽制得住——他退一個房間　代價：無人機 −2　武裝 −15　壓力 +1',cls:'danger',fn:fight});
+    }
+  }
+  // 口袋
+  S.pocket.forEach((it,i)=>{
+    opts.push({label:`使用：${it}`,tag:ITEMS[it]?ITEMS[it].desc:'',cls:'exit',fn:()=>useItem(i)});
+  });
+  choices(opts);
+}
+
+function observe(o){
+  CH.innerHTML='';
+  if(o.exit) return tryExit();
+  if(o.cost===0){
+    say('nar', o.fix);
+    say('dim', o.gain);
+    S.calm++;
+    if(o.kw) unlock(o.kw);
+    say('sys','你沒有看清楚。<b>這一格沒有成立。</b>');
+    // ★ 不觀測會降壓——因為狹間沒有東西可以抓著你。
+    //   2026-08-18 修：立 calmstep，下一個房間追獵者真的不動（跟旁白一致）。
+    const p0=S.pressure;
+    S.pressure = Math.max(0, S.pressure-1);
+    say('sys',`壓力 ${p0} → ${S.pressure}`);
+    S.calmstep = true;
+    S.charge -= 3;
+    if(o.heal){ S.charge = Math.min(120, S.charge + o.heal + 3); say('sys',`武裝 +${o.heal}`); }
+    if(o.item) pickup(o.item);
+    S.drift++;
+    if(S.hunters.length){ say('dim','後面的東西沒有跟上來。它需要你先看它一眼。'); }
+    // ★★★ 可是沒有固定東西 ＝ 狹間繼續擴散。
+    //   龜縮不是解法——不觀測的人不會被收容，會直接沒有成立過。
+    if(S.drift===2){ say('dim','走廊比剛才長了。你確定剛才沒有這麼長。'); }
+    if(S.drift===4){ say('red','你回頭看走過的地方——它們鬆掉了。牆退回沒有顏色，地板退回沒有厚度。'); }
+    if(S.drift>=5){ return dissolve(); }
+    return after();
+  }
+  // 固定一位數字
+  const d = Math.floor(Math.random()*10);
+  const slot = S.digits.indexOf(null);
+  if(slot>=0) S.digits[slot]=d;
+  say('nar', o.fix);
+  say('dim', o.gain);
+  if(o.kw) unlock(o.kw);
+  say('sys', `<span class="gold">固定。</span>讀數第 ${slot+1} 位寫上了 <b>${d}</b>。`);
+  if(S.luck){ say('sys','找零的運氣用掉了——這一眼看得剛剛好，壓力沒有動。'); S.luck=false; }
+  else { S.pressure += o.cost; }
+  S.charge -= 6 + o.cost*2;
+  if(o.heal){ S.charge = Math.min(120, S.charge + o.heal); say('sys',`武裝 +${o.heal}　有些地方對人是好的。`); }
+  if(o.item) pickup(o.item);
+  S.drift = 0;
+  if(o.page && !S.signed){
+    say('sys','★ 你手上有一支筆——你在別的地方撿過，或者你只是想到自己有。');
+    choices([
+      {label:'（在名字欄寫上自己的名字）',tag:'★ 這一格會決定你最後是誰',cls:'exit',fn:()=>signPage(true)},
+      {label:'（把紙放回去）',tag:'空白留著。誰都可以填。',cls:'',fn:()=>signPage(false)},
+    ]);
+    return;
+  }
+  if(o.spawn && !S.hunters.includes(o.spawn)){
+    S.hunters.push(o.spawn);
+    say('red', `★ 你觀測了它，所以它成立了。<b>${o.spawn}</b>　開始跟著你。`);
+    unlock('意聚生物');
+  }
+  after();
+}
+
+/* ── 空白頁：寫不寫自己的名字 ────────────────────────── */
+function signPage(yes){
+  CH.innerHTML='';
+  if(yes){
+    S.signed = true;
+    if(!PLAYER_NAME){
+      const n = (prompt('名字欄。你要填什麼？','') || '').trim();
+      PLAYER_NAME = n.slice(0,12) || '（沒有寫完的那一個）';
+    }
+    say('nar', `你把名字寫上去了。<span class="gold">${PLAYER_NAME}</span>`);
+    say('nar','筆跡是你的。醜，可是是你的。');
+    say('sys','★ <b>你替自己填了那一格。</b>從現在起，如果他們收容你，收容的是<b>你</b>，不是一個不明物件。');
+    unlock('收容');
+  }else{
+    S.signed = false;
+    say('nar','你把紙放回去，壓平。');
+    say('dim','空白留著。誰都可以填——包括這個地方本身。');
+    say('sys','那一頁還是空的。而空的東西，總會有人替它填。');
+  }
+  if(!S.hunters.includes('空白頁')){
+    S.hunters.push('空白頁');
+    say('red','★ 你觀測了它，所以它成立了。<b>空白頁</b>　開始跟著你。');
+    unlock('意聚生物');
+  }
+  after();
+}
+
+/* ── 道具 ─────────────────────────────────────────── */
+function pickup(name){
+  if(S.pocket.length>=3){ say('sys',`口袋滿了。你把 ${name} 放回去——三樣是你記得住的極限。`); return; }
+  S.pocket.push(name);
+  say('sys',`§ 拿到了 <span class="gold">${name}</span>　${ITEMS[name]?ITEMS[name].desc:''}`);
+}
+function useItem(idx){
+  const name=S.pocket[idx]; if(!name) return;
+  S.pocket.splice(idx,1);
+  say('nar', ITEMS[name].use);
+  if(name==='布丁'){
+    if(S.hunters.length){
+      const h=S.hunters.pop(); S.ally=h;
+      say('nar',`${h}　停下來了。牠吃得很認真。`);
+      say('sys',`★ <b>${h}</b> 站到你這邊了。有牠在，每個房間壓力 −1。`);
+    }else{
+      S.charge=Math.min(120,S.charge+10);
+      say('dim','沒有東西跟著你。你自己吃了。很好吃。武裝 +10。');
+    }
+  }else if(name==='零件'){
+    if(S.drones>=6){ say('dim','庫存是滿的。你把零件收好——收好的下一秒它不見了。這裡不留多餘的東西。'); }
+    else{ S.drones++; say('sys',`無人機 +1（現在 ${S.drones} 台）。拼回來的這台飛得有點歪，可是它在。`); }
+  }else if(name==='找零的運氣'){
+    S.luck=true;
+    say('sys','下一次觀測不會加壓。運氣這種東西，用在刀口上。');
+  }else if(name==='普通的一天'){
+    const d0=S.drift; S.drift=0;
+    say('sys',`擴散 ${d0} → 0。日常把鬆掉的地方全部壓回去了。`);
+    const i=S.hunters.indexOf('買到的那一天');
+    if(i>=0){ S.hunters.splice(i,1); say('dim','「買到的那一天」不再跟著你——它被打開了，它完成了。'); }
+  }else if(name==='錯誤的名字'){
+    if(S.hunters.length){
+      const h=S.hunters[S.hunters.length-1];
+      S.pressure+=2;
+      const d=Math.floor(Math.random()*10); const slot=S.digits.indexOf(null);
+      if(slot>=0){ S.digits[slot]=d; say('sys',`<span class="gold">固定。</span>讀數第 ${slot+1} 位寫上了 <b>${d}</b>。`); }
+      say('red',`${h}　氣到現形了。壓力 +2——可是現形的東西，輪廓最清楚。`);
+    }else{
+      say('dim','你對著空氣喊錯了一個名字。安靜。有一點尷尬。名字浪費掉了。');
+    }
+  }
+  render();
+  showRoomChoices();
+}
+
+/* ── 千隱世（93 代）─────────────────────────────────── */
+function qysEncounter(){
+  S.qysDone=true; S.qysN=0;
+  head('巡邏');
+  say('nar','<span style="color:#7aa96a"><b>綠色外套。</b></span>金色左輪還在腰上，錶鏈從口袋垂下來。');
+  say('nar','世「這裡的讀數在動。」');
+  if(S.hunters.length>=3 || S.pressure>=capOf()-2){
+    say('nar','世「巡邏。發現失控觀測體。」');
+    say('nar','世「⋯⋯沒有惡意。只是你停不下來了。」');
+    say('dim','他沒有拔槍。他把懷錶打開，按了一下。');
+    // ★ 換曲是放給玩家聽的，角色聽不到 BGM。旁白只寫界內徵兆。
+    say('sys','【街機版此處切換 music.sound789——他在追殺人時的那一首】');
+    say('red','空氣繃緊了。這裡到出口之間的每一扇門，都輕輕闔了一次。');
+    S.hunt=3;
+    say('nar','世「三個房間。」');
+    say('nar','世「把你自己壓回去。不然我來。」');
+    showRoomChoices(); render();
+    return;
+  }
+  say('nar','世「──還壓得住。」');
+  if(S.hunters.length){
+    const h=S.hunters.pop();
+    say('dim',`他抬手，一發。<span class="red">${h}</span>　散掉了——不是死掉，是退回沒定型的樣子。`);
+  }
+  const p0=S.pressure; S.pressure=Math.max(0,S.pressure-3);
+  say('sys',`壓力 ${p0} → ${S.pressure}`);
+  say('nar','世「這一帶我修過了。」');
+  say('nar','世「別讓我再來一次。」');
+  say('dim','他走了。三個房間之外，槍聲響了一次——別的地方也有讀數在動。');
+  showRoomChoices(); render();
+}
+function corrected(){
+  S.over=true; CH.innerHTML='';
+  head('修　正');
+  say('nar','你看見金色的光。');
+  say('nar','沒有痛。虛毀彈打散的不是身體，是「正在成立」這件事本身。');
+  say('nar','你看見這個地方退回沒有顏色的樣子。');
+  say('nar','然後你看見這個地方沒有你。');
+  say('sys','讀數退回 <b>9.??????</b>。');
+  say('dim','他把彈殼撿起來收好，在懷錶上按了一下。');
+  say('nar','世「巡邏，結束。」');
+  unlock('千隱世'); unlock('虛幻殺手');
+  archiveMe('虛幻殺手');
+  endCard();
+}
+
+function dodge(){
+  if(!S.hunt||S.over) return;
+  CH.innerHTML='';
+  say('nar','你找了一個他還沒成立的角落，把呼吸關小。');
+  const p0=S.pressure; S.pressure=Math.max(0,S.pressure-1);
+  say('sys',`壓力 ${p0} → ${S.pressure}`);
+  S.charge-=3; S.drift++; S.dodged=true; S.calmstep=true;
+  if(S.drift>=5) return dissolve();
+  after();
+}
+function fight(){
+  if(!S.hunt||S.over||S.drones<2) return;
+  CH.innerHTML='';
+  say('nar','你把盾全部展開，衝過去。');
+  say('nar','他沒有躲。');
+  say('red','⋯⋯三秒。');
+  S.drones-=2; S.charge-=15; S.pressure+=1; S.fought=true;
+  if(S.charge<=0) return contained('沒電');
+  nextRoom();
+}
+
+function suppress(){
+  CH.innerHTML='';
+  say('nar','你停下來。');
+  say('nar','不看、不聽、不數、不叫任何人的名字。');
+  S.drones--;
+  const p0=S.pressure;
+  S.pressure = Math.max(0, S.pressure-3);
+  say('sys',`壓力 ${p0} → ${S.pressure}`);
+  S.calmstep = true;   // ★ 花無人機買來的安靜——追獵者這一步不動
+  if(S.hunters.length){
+    const gone = S.hunters.pop();
+    say('dim', `<b>${gone}</b>　鬆掉了。它退回還沒定型的樣子。`);
+  }
+  say('sys','武裝掉了一台無人機——維持不觀測的狀態要靠它替你擋掉環境訊號。');
+  // ★ 「停下來」不累積擴散：它是你花一台無人機主動買來的，
+  //   跟「什麼都不看」不一樣。不然壓力一高就兩邊都是死路。
+  unlock('無人機庫存');
+  if(S.drones<=0){ say('red','無人機庫存見底。刀只剩半截，盾拼不出來。'); }
+  after();
+}
+
+function cannibal(){
+  CH.innerHTML='';
+  S.drones--; S.charge = Math.min(120, S.charge+30);
+  say('nar','你把一台無人機拆開，把裡面剩下的源能倒回武裝匣。');
+  say('dim','它不會再組回來了。刀會少一段，盾會薄一層。');
+  unlock('無人機庫存'); unlock('特勤武裝');
+  if(S.drones<=0) say('red','庫存見底。');
+  after();
+}
+
+function after(){
+  render();
+  if(S.charge<=0){ return contained('沒電'); }
+  choices([{label:'往前走',tag:'',fn:nextRoom}]);
+}
+
+function tryExit(){
+  say('nar','你把手放在那個開口上。');
+  const f = filled();
+  if(f<3){
+    say('nar','推不動。');
+    say('sys','這個地方還太不成立了——<b>連門都還沒有厚度</b>。你至少要固定三格，門才推得動。');
+    return after();
+  }
+  say('nar','推得動。');
+  say('nar','另一側是白的。你走進去。');
+  if(S.hunt>0){
+    S.hunt=0;
+    say('dim','歌在你背後停了。');
+    say('dim','他沒有跟出來。門外沒有讀數可以修。');
+    say('gold','★ 成功逃離。');
+  }
+  return converge(true);
+}
+
+/* ── 結束：收束 ───────────────────────────────────── */
+function converge(early){
+  S.over=true; CH.innerHTML='';
+  const f=filled();
+  head('收束');
+  if(early && f<6){
+    say('nar','你走出去了。');
+    say('nar','身後那個地方沒有跟上來——它還是一團沒有寫完的東西，你只固定了它的一部分。');
+    say('nar',`讀數停在 <span class="gold">9.${S.digits.map(d=>d===null?'?':d).join('')}</span>。`);
+    say('nar','沒有人來收容你。');
+    say('nar','因為你也沒有真的成立。');
+    say('sys','<b>〈走出去了，可是沒有人記得〉</b>　——這一次，仍然沒能改變什麼。');
+    unlock('收束');
+    archiveMe('自行離開');
+    return endCard();
+  }
+  say('nar','第六位填上去的那一瞬間，八個字全部亮起來。');
+  say('nar',`<span class="gold">9.${S.digits.join('')}</span>`);
+  say('nar','狹間停止了擴散。');
+  say('nar','牆有了顏色，地板有了厚度，光有了方向。');
+  say('nar','這個地方成立了。');
+  say('nar','而你在裡面。');
+  say('sys','<b>你不是逃出來的人。你是這個世界的第一項內容。</b>');
+  unlock('收束');
+  archiveMe('自行收束');
+  endCard();
+}
+
+/* ── 結束：擴散（龜縮的代價）───────────────────────── */
+function dissolve(){
+  S.over=true; CH.innerHTML='';
+  head('擴散');
+  say('nar','你什麼都沒有看清楚。');
+  say('nar','所以什麼都沒有成立。');
+  say('nar','包括你站的地方，包括你走過的路，包括——');
+  say('nar','你伸手看自己的手。手的邊緣沒有線。');
+  say('nar','你想不起來自己的名字是幾個字。');
+  say('nar','不是忘記。是那個東西還沒有被寫下來過。');
+  say('sys','<b>沒有人來收容你。收容需要對象。</b>');
+  say('sys','你不是被消滅的。你是<b>沒有成立過</b>。');
+  say('sys','★ 這一輪不會留下檔案——因為沒有東西可以歸檔。');
+  unlock('狹間'); unlock('觀測即固定');
+  endCard();
+}
+
+function contained(by){
+  S.over=true; CH.innerHTML='';
+  head('收容');
+  if(by==='沒電'){
+    say('nar','武裝的燈一盞一盞熄掉。');
+    say('nar','刀先散掉，然後是盾，最後是手電筒。');
+    say('nar','你站在一個還沒有寫完的地方，手上什麼都沒有。');
+  }else{
+    say('red', `<b>${by}</b>　追上來了。`);
+    say('nar','它沒有攻擊你。它只是站在你面前，然後停下來——');
+    say('nar','像在等你看清楚它。');
+    say('nar','你看清楚了。');
+  }
+  say('nar','後面的腳步聲是八個人，武裝全開，隊形沒有亂。');
+  say('nar','他們沒有喊停，也沒有問你的名字。');
+  say('nar','他們只是把你走過的每一個地方，從後面一格一格固定下來。');
+  say('sys','標準流程。<b>被收容的東西不會消失，它會變成一個條目。</b>');
+  unlock('收容');
+  archiveMe(by==='沒電' ? '能源耗盡' : by);
+  endCard();
+}
+
+function archiveMe(cause){
+  const no = 'RC-9-' + String(100+ARCHIVE.length*7+RUN).slice(-3);
+  const cls = filled()>=6 ? '已成立' : (filled()>=3 ? '部分成立' : '未成立');
+  const e = {
+    no, cls, cause,
+    vr:'9.'+S.digits.map(d=>d===null?'?':d).join(''),
+    steps:S.steps,
+    hunters:S.hunters.slice(),
+    signed: !!S.signed,
+    name: S.signed ? (PLAYER_NAME||'（你自己填的那個名字）') : nameMe()
+  };
+  ARCHIVE.push(e);
+  showEntry(e);
+}
+function nameMe(){
+  const a=['數過拍子的','叫過名字的','沒有回頭的','把紙翻過去的','聽得出頻率的','比自己晚半拍的','推開門的','站著等的'];
+  const b=['意聚者','觀測者','那一個','第二十五個','空白頁上的名字'];
+  return a[Math.floor(Math.random()*a.length)]+b[Math.floor(Math.random()*b.length)];
+}
+function showEntry(e){
+  const d=document.createElement('div'); d.className='entry fade';
+  d.innerHTML=`<div class="no">${e.no}</div><h3>${e.name}</h3>
+    <dl>
+      <dt>收容分級</dt><dd>${e.cls}</dd>
+      <dt>停止時的讀數</dt><dd style="font-family:ui-monospace,monospace;letter-spacing:.12em">${e.vr}</dd>
+      <dt>觀測次數</dt><dd>${e.steps} 個地方</dd>
+      <dt>結束原因</dt><dd>${e.cause}</dd>
+      <dt>伴隨成立的物件</dt><dd>${e.hunters.length? e.hunters.join('、') : '（無）'}</dd>
+      <dt>名字欄</dt><dd>${e.signed
+        ? '<span class="gold">由本人填寫。</span>'
+        : '<span class="dim">空白。本欄由收容方代填。</span>'}</dd>
+      <dt>處置</dt><dd>${e.cause==='虛幻殺手'
+        ? '不予封存。該項目已被修正，相關讀數已回收。'
+        : e.cls==='已成立'
+        ? '不予移除。該項目已構成該區域之基礎內容，移除將導致區域退回未成立狀態。'
+        : '封存。★ 下一次有觀測者進入本區域時，本條目將作為既存物件出現。'}</dd>
+      ${e.signed?'<dt>備註</dt><dd class="gold">本項目於收容前已自行完成登記。<br>依規定，登記在案者不列為「不明物件」——列為<b>人員</b>。</dd>':''}
+    </dl>`;
+  LOG.appendChild(d); scroll();
+}
+
+function endCard(){
+  render();
+  choices([
+    {label:'再來一次',tag:`已經留下 ${ARCHIVE.length} 件檔案。它們會在下一輪出現。`,fn:newRun},
+    {label:'看收容檔案',tag:'',fn:showArchive},
+    {label:'看關鍵詞',tag:'',fn:showKw},
+  ]);
+}
+
+/* ── UI ───────────────────────────────────────────── */
+function choices(list){
+  CH.innerHTML='';
+  list.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='ch fade'+(o.cls?' '+o.cls:'');
+    b.innerHTML=o.label+(o.tag?`<span class="tag">${o.tag}</span>`:'');
+    b.onclick=()=>{ CH.innerHTML=''; o.fn(); };
+    CH.appendChild(b);
+  });
+  scroll();
+}
+function showArchive(){
+  head('收容檔案');
+  if(!ARCHIVE.length) say('dim','（還沒有任何條目。）');
+  else ARCHIVE.forEach(showEntry);
+  endCardLite();
+}
+function showKw(){
+  head('關鍵詞');
+  const ks=Object.keys(KW);
+  ks.forEach(k=>{
+    if(SEEN_KW.has(k)) say('nar',`<span class="gold">${k}</span>　<span class="dim">${KW[k]}</span>`);
+    else say('dim',`<span class="void">■■■■</span>　<span class="void">（未解鎖）</span>`);
+  });
+  endCardLite();
+}
+function endCardLite(){
+  choices([{label:'回去',tag:'',fn:()=>{ if(S && !S.over) after(); else endCard(); }}]);
+}
+$('#lnkArc').onclick=showArchive;
+$('#lnkKey').onclick=showKw;
+$('#lnkNew').onclick=()=>{ if(confirm('重新開始？收容檔案會保留。')) newRun(); };
+
+newRun();
+</script>
+</body>
+</html>
